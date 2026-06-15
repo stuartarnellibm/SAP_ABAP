@@ -1,0 +1,6 @@
+@EndUserText.label: 'Access Control for Product'
+@MappingRole: true
+define role ZHB_I_PRODUCT {
+  grant select on ZHB_I_PRODUCT
+    where inheriting conditions from entity I_Product;
+}

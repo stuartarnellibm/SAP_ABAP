@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_DCLS" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <DCLS>
+    <DCLSNAME>ZHB_I_PRODUCT</DCLSNAME>
+    <DDLANGUAGE>E</DDLANGUAGE>
+    <DCLS_TYPE>R</DCLS_TYPE>
+   </DCLS>
+  </asx:values>
+ </asx:abap>
+</abapGit>
+
+<!-- Made with Bob -->
