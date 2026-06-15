@@ -62,11 +62,18 @@ lo_job->schedule( ).
 src_s4_btp_compliant/
 ├── package.devc.xml                    # Root package (ABAP Cloud)
 └── zms2_cloud/
-    ├── package.devc.xml                # Sub-package
-    ├── zhb_i_product.ddls.asddls       # CDS View (with auth check)
-    ├── zhb_i_product.ddls.xml          # CDS metadata
-    ├── zhb_i_product.dcls.asdcls       # DCL (authorization)
-    ├── zhb_i_product.dcls.xml          # DCL metadata
+    ├── package.devc.xml                       # Sub-package
+    ├── zhb_i_product.ddls.asddls              # CDS View (Interface)
+    ├── zhb_i_product.ddls.xml                 # CDS metadata
+    ├── zhb_i_product.dcls.asdcls              # DCL (authorization)
+    ├── zhb_i_product.dcls.xml                 # DCL metadata
+    ├── zhb_c_product.ddls.asddls              # CDS Projection (Consumption)
+    ├── zhb_c_product.ddls.xml                 # Projection metadata
+    ├── zhb_c_product.ddlx.asddlxs             # Metadata Extension (UI)
+    ├── zhb_c_product.ddlx.xml                 # Extension metadata
+    ├── zhb_sd_product.srvd.srvdsrv            # Service Definition
+    ├── zhb_sd_product.srvd.xml                # Service metadata
+    ├── zhb_sb_product_o4.srvb.xml             # Service Binding (OData V4)
     ├── zcl_online_shop_integration.clas.abap  # Integration class
     ├── zcl_online_shop_integration.clas.xml   # Class metadata
     ├── zcx_integration_error.clas.abap        # Exception class
@@ -177,12 +184,42 @@ TODO: Implement ABAP Unit tests for:
 - Background task processing requires bgPF configuration
 - Authorization now enforced (was disabled in original)
 
+## RAP Business Object Architecture
+
+### Complete RAP Stack Implemented
+
+**Interface Layer (Data Model)**
+- [`zhb_i_product.ddls`](zms2_cloud/zhb_i_product.ddls.asddls) - Interface view with authorization
+
+**Consumption Layer (Projection)**
+- [`zhb_c_product.ddls`](zms2_cloud/zhb_c_product.ddls.asddls) - Projection view for consumption
+- [`zhb_c_product.ddlx`](zms2_cloud/zhb_c_product.ddlx.asddlxs) - UI annotations for Fiori Elements
+
+**Service Layer**
+- [`zhb_sd_product.srvd`](zms2_cloud/zhb_sd_product.srvd.srvdsrv) - Service definition
+- [`zhb_sb_product_o4.srvb`](zms2_cloud/zhb_sb_product_o4.srvb.xml) - OData V4 service binding
+
+### Service Endpoints
+
+After activation, the service will be available at:
+```
+/sap/opu/odata4/sap/zhb_sb_product_o4/srvd/sap/zhb_sd_product/0001/Product
+```
+
+### Fiori Elements Support
+
+The metadata extensions provide:
+- List report with search and filters
+- Object page with facets (General, Sales, Technical)
+- Field groups for organized data display
+- Responsive UI annotations
+
 ## Known Limitations
 
 1. **Communication Arrangement** must be manually configured
 2. **Message Class** `ZONLINE_SHOP` must be created manually
 3. **Background Processing Framework** requires system configuration
-4. **RAP Business Object** for OData services not yet implemented (see roadmap)
+4. **Service Binding** must be published in SAP system
 
 ## Roadmap
 
@@ -193,11 +230,11 @@ TODO: Implement ABAP Unit tests for:
 - [x] Background Processing Framework
 - [x] Exception handling
 
-### Phase 2: Service Layer (Planned)
-- [ ] RAP Business Object for Product
-- [ ] OData V4 service definition
-- [ ] Service binding
-- [ ] Replace SEGW extension report
+### Phase 2: Service Layer ✅ (Complete)
+- [x] RAP Business Object for Product
+- [x] OData V4 service definition
+- [x] Service binding
+- [x] Metadata extensions for Fiori UI
 
 ### Phase 3: Advanced Features (Future)
 - [ ] ABAP Unit tests
