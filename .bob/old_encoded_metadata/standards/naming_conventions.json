@@ -1,0 +1,478 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SAP R/3 Naming Conventions - CPG Implementation",
+  "description": "Comprehensive naming conventions for all SAP objects in CPG Order-to-Cash and Warehouse Management",
+  "last_updated": "2026-06-17",
+  "system": "SAP R/3 ECC 6.0 On-Premise",
+  
+  "general_rules": {
+    "namespace": {
+      "customer_namespace": "Z",
+      "alternative_namespace": "Y",
+      "company_identifier": "CPG",
+      "rationale": "Z/Y namespaces reserved for customer developments, CPG identifies company"
+    },
+    "character_restrictions": {
+      "allowed": "A-Z, 0-9, underscore (_)",
+      "not_allowed": "Special characters, spaces, lowercase (except in comments)",
+      "case_sensitivity": "Not case-sensitive but use uppercase for consistency"
+    },
+    "length_limits": {
+      "note": "Respect SAP maximum lengths for each object type",
+      "common_limits": {
+        "programs": 40,
+        "function_modules": 30,
+        "classes": 30,
+        "tables": 16,
+        "data_elements": 30
+      }
+    }
+  },
+  
+  "repository_objects": {
+    "programs": {
+      "pattern": "ZCPG_<MODULE>_<PURPOSE>",
+      "module_codes": {
+        "SD": "Sales & Distribution",
+        "MM": "Materials Management",
+        "WM": "Warehouse Management",
+        "LE": "Logistics Execution",
+        "FI": "Financial Accounting",
+        "CO": "Controlling"
+      },
+      "examples": {
+        "reports": [
+          "ZCPG_SD_ORDER_DASHBOARD",
+          "ZCPG_MM_BATCH_EXPIRY_RPT",
+          "ZCPG_WM_PERFORMANCE_RPT",
+          "ZCPG_LE_DELIVERY_STATUS"
+        ],
+        "batch_programs": [
+          "ZCPG_SD_ORDER_BATCH_PROC",
+          "ZCPG_MM_INVENTORY_UPDATE",
+          "ZCPG_WM_SLOTTING_BATCH"
+        ],
+        "interfaces": [
+          "ZCPG_SD_EDI_INBOUND",
+          "ZCPG_MM_MDM_INTERFACE",
+          "ZCPG_WM_TMS_OUTBOUND"
+        ]
+      },
+      "prohibited": [
+        "Generic names: ZTEST, ZTEMP, ZPROG",
+        "Developer initials: ZJSMITH, ZMJONES",
+        "Dates: Z20260617, ZJAN2026",
+        "Cryptic abbreviations: ZXYZ, ZABC123"
+      ]
+    },
+    
+    "function_modules": {
+      "pattern": "ZCPG_<MODULE>_<ACTION>_<OBJECT>",
+      "action_verbs": {
+        "create": "CREATE",
+        "read": "GET, READ, DISPLAY",
+        "update": "UPDATE, CHANGE, MODIFY",
+        "delete": "DELETE, REMOVE",
+        "validate": "VALIDATE, CHECK, VERIFY",
+        "calculate": "CALCULATE, COMPUTE",
+        "process": "PROCESS, EXECUTE"
+      },
+      "examples": [
+        "ZCPG_SD_CREATE_ORDER",
+        "ZCPG_SD_GET_ORDER_DETAILS",
+        "ZCPG_SD_VALIDATE_ORDER",
+        "ZCPG_MM_CHECK_BATCH_EXPIRY",
+        "ZCPG_WM_CREATE_TRANSFER_ORDER",
+        "ZCPG_WM_CALCULATE_SLOTTING"
+      ],
+      "parameter_naming": {
+        "importing": "I_<name> or IV_<name>",
+        "exporting": "E_<name> or EV_<name>",
+        "changing": "C_<name> or CV_<name>",
+        "tables": "T_<name> or IT_<name>",
+        "examples": [
+          "I_ORDER_NUMBER TYPE vbeln_va",
+          "E_ORDER_HEADER TYPE vbak",
+          "T_ORDER_ITEMS TYPE TABLE OF vbap"
+        ]
+      }
+    },
+    
+    "function_groups": {
+      "pattern": "ZCPG_<MODULE>_<PURPOSE>",
+      "examples": [
+        "ZCPG_SD_ORDER_UTILS",
+        "ZCPG_MM_BATCH_UTILS",
+        "ZCPG_WM_TO_UTILS",
+        "ZCPG_COMMON_UTILS"
+      ],
+      "organization": "Group related function modules together"
+    },
+    
+    "classes": {
+      "pattern": "ZCL_CPG_<MODULE>_<PURPOSE>",
+      "types": {
+        "business_logic": "ZCL_CPG_<MODULE>_<ENTITY>",
+        "utility": "ZCL_CPG_UTIL_<PURPOSE>",
+        "exception": "ZCX_CPG_<ERROR_TYPE>",
+        "interface": "ZIF_CPG_<PURPOSE>",
+        "test": "ZCL_CPG_<MODULE>_<PURPOSE>_TEST"
+      },
+      "examples": {
+        "business": [
+          "ZCL_CPG_SD_ORDER_PROCESSOR",
+          "ZCL_CPG_MM_BATCH_MANAGER",
+          "ZCL_CPG_WM_SLOTTING_ENGINE",
+          "ZCL_CPG_LE_DELIVERY_HANDLER"
+        ],
+        "utility": [
+          "ZCL_CPG_UTIL_DATE",
+          "ZCL_CPG_UTIL_STRING",
+          "ZCL_CPG_UTIL_NUMBER",
+          "ZCL_CPG_UTIL_TABLE"
+        ],
+        "exception": [
+          "ZCX_CPG_ORDER_ERROR",
+          "ZCX_CPG_BATCH_ERROR",
+          "ZCX_CPG_WM_ERROR",
+          "ZCX_CPG_VALIDATION_ERROR"
+        ],
+        "interface": [
+          "ZIF_CPG_ORDER_VALIDATOR",
+          "ZIF_CPG_BATCH_CHECKER",
+          "ZIF_CPG_WM_STRATEGY",
+          "ZIF_CPG_LOGGER"
+        ]
+      },
+      "method_naming": {
+        "pattern": "<action>_<object>",
+        "case": "lowercase_with_underscores",
+        "examples": [
+          "create_order",
+          "get_order_details",
+          "validate_order_header",
+          "calculate_total_amount",
+          "check_batch_expiry"
+        ],
+        "special_methods": {
+          "constructor": "constructor",
+          "class_constructor": "class_constructor",
+          "getter": "get_<attribute>",
+          "setter": "set_<attribute>",
+          "boolean": "is_<condition>, has_<property>"
+        }
+      },
+      "attribute_naming": {
+        "instance": "m<type>_<name>",
+        "static": "g<type>_<name>",
+        "constant": "c<type>_<name>",
+        "types": {
+          "v": "variable",
+          "s": "structure",
+          "t": "table",
+          "r": "reference",
+          "o": "object"
+        },
+        "examples": [
+          "mv_order_number TYPE vbeln_va",
+          "ms_order_header TYPE vbak",
+          "mt_order_items TYPE TABLE OF vbap",
+          "mr_order_processor TYPE REF TO zcl_cpg_sd_order_processor"
+        ]
+      }
+    },
+    
+    "interfaces": {
+      "pattern": "ZIF_CPG_<PURPOSE>",
+      "examples": [
+        "ZIF_CPG_ORDER_VALIDATOR",
+        "ZIF_CPG_BATCH_CHECKER",
+        "ZIF_CPG_WM_STRATEGY",
+        "ZIF_CPG_LOGGER",
+        "ZIF_CPG_SERIALIZABLE"
+      ],
+      "method_naming": "Same as class methods"
+    }
+  },
+  
+  "dictionary_objects": {
+    "tables": {
+      "pattern": "ZCPG_<MODULE>_<ENTITY>",
+      "max_length": 16,
+      "types": {
+        "master_data": "ZCPG_<ENTITY>_M",
+        "transaction": "ZCPG_<ENTITY>_T",
+        "configuration": "ZCPG_<ENTITY>_C",
+        "log": "ZCPG_<ENTITY>_L",
+        "text": "ZCPG_<ENTITY>_TXT"
+      },
+      "examples": [
+        "ZCPG_ORDER_EXT",
+        "ZCPG_BATCH_TRACK",
+        "ZCPG_WM_CONFIG",
+        "ZCPG_ORDER_LOG",
+        "ZCPG_PROMO_TXT"
+      ],
+      "field_naming": {
+        "key_fields": "Use SAP standard field names where possible",
+        "custom_fields": "Descriptive names, avoid abbreviations",
+        "examples": [
+          "MANDT - Client (always first key field)",
+          "VBELN - Sales Document Number",
+          "PROMO_ID - Promotion ID",
+          "EXPIRY_DATE - Expiry Date",
+          "CREATED_BY - Created By User",
+          "CREATED_ON - Created On Date"
+        ]
+      }
+    },
+    
+    "structures": {
+      "pattern": "ZCPG_S_<PURPOSE>",
+      "examples": [
+        "ZCPG_S_ORDER_HEADER",
+        "ZCPG_S_ORDER_ITEM",
+        "ZCPG_S_BATCH_INFO",
+        "ZCPG_S_WM_TASK",
+        "ZCPG_S_RETURN_MESSAGE"
+      ]
+    },
+    
+    "table_types": {
+      "pattern": "ZCPG_T_<PURPOSE>",
+      "examples": [
+        "ZCPG_T_ORDER_ITEMS",
+        "ZCPG_T_BATCH_LIST",
+        "ZCPG_T_WM_TASKS",
+        "ZCPG_T_MESSAGES"
+      ]
+    },
+    
+    "data_elements": {
+      "pattern": "ZCPG_<PURPOSE>",
+      "examples": [
+        "ZCPG_ORDER_STATUS",
+        "ZCPG_BATCH_EXPIRY_DATE",
+        "ZCPG_WM_PRIORITY",
+        "ZCPG_PROMO_CODE",
+        "ZCPG_TRADE_TERMS"
+      ],
+      "documentation": "Always provide field label and documentation"
+    },
+    
+    "domains": {
+      "pattern": "ZCPG_<PURPOSE>",
+      "examples": [
+        "ZCPG_STATUS",
+        "ZCPG_PRIORITY",
+        "ZCPG_FLAG",
+        "ZCPG_AMOUNT",
+        "ZCPG_QUANTITY"
+      ],
+      "value_ranges": "Document fixed values and value ranges"
+    },
+    
+    "views": {
+      "pattern": "ZCPG_V_<PURPOSE>",
+      "types": {
+        "database_view": "ZCPG_V_<entity>",
+        "projection_view": "ZCPG_VP_<entity>",
+        "maintenance_view": "ZCPG_VM_<entity>",
+        "help_view": "ZCPG_VH_<entity>"
+      },
+      "examples": [
+        "ZCPG_V_ORDER_DETAILS",
+        "ZCPG_VP_BATCH_INFO",
+        "ZCPG_VM_CONFIG",
+        "ZCPG_VH_CUSTOMERS"
+      ]
+    },
+    
+    "search_helps": {
+      "pattern": "ZCPG_SH_<PURPOSE>",
+      "examples": [
+        "ZCPG_SH_ORDERS",
+        "ZCPG_SH_BATCHES",
+        "ZCPG_SH_MATERIALS",
+        "ZCPG_SH_CUSTOMERS"
+      ]
+    }
+  },
+  
+  "enhancements": {
+    "user_exits": {
+      "pattern": "Use SAP-provided exit names",
+      "implementation": "Code in designated includes (MV45AFZZ, MV50AFZ1, etc.)",
+      "form_routines": "Use SAP-provided form routine names"
+    },
+    
+    "badis": {
+      "implementation_class": "ZCL_IM_CPG_<BADI_NAME>",
+      "examples": [
+        "ZCL_IM_CPG_SD_HEADER_CHECK",
+        "ZCL_IM_CPG_MM_MATERIAL_CHECK",
+        "ZCL_IM_CPG_WM_PICKING_STRATEGY"
+      ]
+    },
+    
+    "enhancement_implementations": {
+      "pattern": "ZCPG_<MODULE>_<PURPOSE>",
+      "examples": [
+        "ZCPG_SD_ORDER_ENHANCEMENTS",
+        "ZCPG_MM_BATCH_ENHANCEMENTS",
+        "ZCPG_WM_TO_ENHANCEMENTS"
+      ]
+    }
+  },
+  
+  "transactions": {
+    "pattern": "ZCPG_<MODULE><NUMBER>",
+    "examples": [
+      "ZCPG_SD01 - Order Dashboard",
+      "ZCPG_MM01 - Batch Expiry Report",
+      "ZCPG_WM01 - Warehouse Performance",
+      "ZCPG_LE01 - Delivery Monitor"
+    ],
+    "documentation": "Always provide transaction text"
+  },
+  
+  "message_classes": {
+    "pattern": "ZCPG_<MODULE>",
+    "examples": [
+      "ZCPG_SD - Sales & Distribution messages",
+      "ZCPG_MM - Materials Management messages",
+      "ZCPG_WM - Warehouse Management messages",
+      "ZCPG_COMMON - Common messages"
+    ],
+    "message_numbers": {
+      "000-099": "Information messages",
+      "100-199": "Success messages",
+      "200-299": "Warning messages",
+      "300-399": "Error messages",
+      "400-499": "Abort messages"
+    }
+  },
+  
+  "packages": {
+    "pattern": "ZCPG_<MODULE>",
+    "structure": {
+      "root": "ZCPG",
+      "modules": [
+        "ZCPG_SD",
+        "ZCPG_MM",
+        "ZCPG_WM",
+        "ZCPG_LE",
+        "ZCPG_COMMON"
+      ]
+    },
+    "transport_layer": "ZCPG"
+  },
+  
+  "variable_naming": {
+    "local_variables": {
+      "pattern": "l<type>_<name>",
+      "types": {
+        "v": "variable",
+        "s": "structure",
+        "t": "table",
+        "r": "reference",
+        "o": "object",
+        "x": "exception"
+      },
+      "examples": [
+        "lv_order_number TYPE vbeln_va",
+        "ls_order_header TYPE vbak",
+        "lt_order_items TYPE TABLE OF vbap",
+        "lr_order_processor TYPE REF TO zcl_cpg_sd_order_processor",
+        "lx_error TYPE REF TO zcx_cpg_error"
+      ]
+    },
+    
+    "global_variables": {
+      "pattern": "g<type>_<name>",
+      "examples": [
+        "gv_company_code TYPE bukrs",
+        "gs_config TYPE zcpg_wm_config",
+        "gt_orders TYPE TABLE OF vbak"
+      ]
+    },
+    
+    "constants": {
+      "pattern": "c<type>_<name> or gc_<name>",
+      "case": "UPPERCASE for value",
+      "examples": [
+        "cv_order_type TYPE auart VALUE 'ZORD'",
+        "gc_status_open TYPE char1 VALUE 'O'",
+        "gc_max_items TYPE i VALUE 999"
+      ]
+    },
+    
+    "field_symbols": {
+      "pattern": "<fs_<name>>",
+      "examples": [
+        "<fs_order>",
+        "<fs_item>",
+        "<fs_line>"
+      ]
+    },
+    
+    "parameters": {
+      "importing": "i<type>_<name> or iv_<name>",
+      "exporting": "e<type>_<name> or ev_<name>",
+      "changing": "c<type>_<name> or cv_<name>",
+      "returning": "r<type>_<name> or rv_<name>",
+      "examples": [
+        "iv_order_number TYPE vbeln_va",
+        "es_order_header TYPE vbak",
+        "ct_order_items TYPE TABLE OF vbap",
+        "rv_success TYPE abap_bool"
+      ]
+    }
+  },
+  
+  "documentation_standards": {
+    "object_documentation": {
+      "mandatory_for": "All custom objects",
+      "include": [
+        "Purpose",
+        "Author",
+        "Date",
+        "Transport",
+        "Change history"
+      ]
+    },
+    
+    "inline_comments": {
+      "style": "Clear and concise",
+      "explain": "WHY, not WHAT",
+      "examples": [
+        "Good: \" Calculate discount based on customer tier (business rule BR-123)",
+        "Bad: \" Loop through items"
+      ]
+    }
+  },
+  
+  "prohibited_patterns": {
+    "avoid": [
+      "Generic names (ZTEST, ZTEMP, ZPROG)",
+      "Developer initials (ZJSMITH, ZMJONES)",
+      "Dates in names (Z20260617)",
+      "Cryptic abbreviations (ZXYZ, ZABC)",
+      "Inconsistent casing",
+      "Special characters (except underscore)",
+      "Spaces in names",
+      "Reserved words as names"
+    ]
+  },
+  
+  "naming_review_checklist": [
+    "Follows Z/Y namespace convention",
+    "Includes CPG company identifier",
+    "Module code is clear (SD/MM/WM/LE)",
+    "Purpose is descriptive",
+    "No prohibited patterns used",
+    "Consistent with existing objects",
+    "Within length limits",
+    "Documented appropriately"
+  ]
+}

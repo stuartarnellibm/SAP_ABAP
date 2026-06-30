@@ -1,0 +1,398 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SAP R/3 Development System Configuration",
+  "description": "Development system configuration for CPG Order-to-Cash and Warehouse Management",
+  "last_updated": "2026-06-17",
+  
+  "system_details": {
+    "system_id": "CPD",
+    "system_name": "CPG Development",
+    "system_type": "Development",
+    "sap_release": "ECC 6.0 EHP8",
+    "database": "Oracle 19c",
+    "operating_system": "Linux x86_64",
+    "landscape_role": "Development",
+    "client": "100",
+    "description": "Primary development system for CPG customizations"
+  },
+  
+  "transport_configuration": {
+    "transport_domain": "CPGDOM",
+    "transport_group": "CPG",
+    "transport_layer": "ZCPG",
+    "transport_target": {
+      "primary": "CPQ",
+      "secondary": "UAT1",
+      "final": "CPP",
+      "description": "4-tier landscape: DEV → QA → UAT → PROD"
+    },
+    "transport_routes": [
+      {
+        "source": "CPD",
+        "target": "CPQ",
+        "transport_layer": "ZCPG",
+        "consolidation_route": true,
+        "delivery_route": false,
+        "description": "Development to Quality Assurance"
+      }
+    ],
+    "transport_request_types": {
+      "workbench": {
+        "prefix": "CPDK9",
+        "description": "Workbench requests for repository objects",
+        "usage": "ABAP programs, function modules, classes, tables"
+      },
+      "customizing": {
+        "prefix": "CPDK0",
+        "description": "Customizing requests for configuration",
+        "usage": "IMG activities, table maintenance"
+      }
+    }
+  },
+  
+  "package_structure": {
+    "custom_packages": [
+      {
+        "package": "ZCPG",
+        "description": "CPG Root Package",
+        "package_type": "Development",
+        "transport_layer": "ZCPG",
+        "software_component": "HOME",
+        "sub_packages": [
+          {
+            "package": "ZCPG_SD",
+            "description": "CPG Sales & Distribution",
+            "responsible": "SD Development Team",
+            "objects": [
+              "Programs: ZCPG_ORDER_*",
+              "Function Groups: ZCPG_SD_*",
+              "Classes: ZCL_CPG_SD_*",
+              "Tables: ZCPG_ORDER_*, ZCPG_CUSTOMER_*"
+            ]
+          },
+          {
+            "package": "ZCPG_MM",
+            "description": "CPG Materials Management",
+            "responsible": "MM Development Team",
+            "objects": [
+              "Programs: ZCPG_BATCH_*",
+              "Function Groups: ZCPG_MM_*",
+              "Classes: ZCL_CPG_MM_*",
+              "Tables: ZCPG_BATCH_*, ZCPG_MATERIAL_*"
+            ]
+          },
+          {
+            "package": "ZCPG_WM",
+            "description": "CPG Warehouse Management",
+            "responsible": "WM Development Team",
+            "objects": [
+              "Programs: ZCPG_WM_*",
+              "Function Groups: ZCPG_WM_*",
+              "Classes: ZCL_CPG_WM_*",
+              "Tables: ZCPG_WM_CONFIG, ZCPG_SLOTTING_*"
+            ]
+          },
+          {
+            "package": "ZCPG_LE",
+            "description": "CPG Logistics Execution",
+            "responsible": "LE Development Team",
+            "objects": [
+              "Programs: ZCPG_DELIVERY_*",
+              "Function Groups: ZCPG_LE_*",
+              "Classes: ZCL_CPG_LE_*"
+            ]
+          },
+          {
+            "package": "ZCPG_COMMON",
+            "description": "CPG Common Utilities",
+            "responsible": "Basis Team",
+            "objects": [
+              "Function Groups: ZCPG_UTIL_*",
+              "Classes: ZCL_CPG_UTIL_*",
+              "Interfaces: ZIF_CPG_*"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  
+  "development_standards": {
+    "object_naming": {
+      "programs": {
+        "pattern": "ZCPG_<module>_<purpose>",
+        "examples": [
+          "ZCPG_SD_ORDER_DASHBOARD",
+          "ZCPG_MM_BATCH_EXPIRY",
+          "ZCPG_WM_PERFORMANCE"
+        ]
+      },
+      "function_modules": {
+        "pattern": "ZCPG_<module>_<action>_<object>",
+        "examples": [
+          "ZCPG_SD_VALIDATE_ORDER",
+          "ZCPG_MM_CHECK_BATCH_EXPIRY",
+          "ZCPG_WM_OPTIMIZE_SLOTTING"
+        ]
+      },
+      "classes": {
+        "pattern": "ZCL_CPG_<module>_<purpose>",
+        "examples": [
+          "ZCL_CPG_SD_ORDER_PROCESSOR",
+          "ZCL_CPG_MM_BATCH_MANAGER",
+          "ZCL_CPG_WM_SLOTTING_ENGINE"
+        ]
+      },
+      "tables": {
+        "pattern": "ZCPG_<module>_<entity>",
+        "examples": [
+          "ZCPG_SD_ORDER_EXT",
+          "ZCPG_MM_BATCH_TRACK",
+          "ZCPG_WM_CONFIG"
+        ]
+      },
+      "interfaces": {
+        "pattern": "ZIF_CPG_<purpose>",
+        "examples": [
+          "ZIF_CPG_ORDER_VALIDATOR",
+          "ZIF_CPG_BATCH_CHECKER",
+          "ZIF_CPG_WM_STRATEGY"
+        ]
+      }
+    },
+    "transport_request_naming": {
+      "pattern": "<type><system><number> - <module> - <description>",
+      "examples": [
+        "CPDK900123 - SD - Order Dashboard Enhancement",
+        "CPDK900124 - MM - Batch Expiry Validation",
+        "CPDK900125 - WM - Slotting Optimization"
+      ]
+    }
+  },
+  
+  "authorization_objects": {
+    "development": [
+      {
+        "object": "S_DEVELOP",
+        "description": "ABAP Workbench authorization",
+        "required_for": "All development activities"
+      },
+      {
+        "object": "S_TRANSPRT",
+        "description": "Transport authorization",
+        "required_for": "Creating and releasing transports"
+      },
+      {
+        "object": "S_TABU_DIS",
+        "description": "Table maintenance authorization",
+        "required_for": "Custom table maintenance"
+      }
+    ],
+    "testing": [
+      {
+        "object": "V_VBAK_VKO",
+        "description": "Sales order authorization",
+        "required_for": "Testing SD developments"
+      },
+      {
+        "object": "M_MSEG_BWA",
+        "description": "Material document authorization",
+        "required_for": "Testing MM developments"
+      },
+      {
+        "object": "W_LTAK",
+        "description": "Transfer order authorization",
+        "required_for": "Testing WM developments"
+      }
+    ]
+  },
+  
+  "development_tools": {
+    "ide": [
+      {
+        "tool": "SAP GUI",
+        "version": "7.70",
+        "usage": "Primary development interface"
+      },
+      {
+        "tool": "ABAP Development Tools (ADT)",
+        "version": "Eclipse 2023-06",
+        "usage": "Modern ABAP development (optional)"
+      }
+    ],
+    "version_control": {
+      "system": "abapGit",
+      "repository": "https://github.com/company/sap-cpg-developments",
+      "branch_strategy": "feature branches from main",
+      "commit_message_format": "<transport> - <module> - <description>"
+    },
+    "code_inspector": {
+      "variant": "ZCPG_STANDARD",
+      "mandatory_checks": [
+        "Syntax errors",
+        "Performance issues",
+        "Security vulnerabilities",
+        "Naming conventions"
+      ],
+      "run_frequency": "Before transport release"
+    }
+  },
+  
+  "testing_requirements": {
+    "unit_testing": {
+      "framework": "ABAP Unit",
+      "coverage_requirement": "80%",
+      "mandatory_for": [
+        "All classes",
+        "Critical function modules",
+        "Complex algorithms"
+      ]
+    },
+    "integration_testing": {
+      "test_client": "100",
+      "test_data": "Maintained in ZCPG_TEST_DATA tables",
+      "test_scenarios": [
+        "Order-to-Cash end-to-end",
+        "Warehouse operations",
+        "Batch management"
+      ]
+    }
+  },
+  
+  "change_management": {
+    "process": [
+      {
+        "step": 1,
+        "activity": "Create transport request",
+        "responsible": "Developer",
+        "documentation": "Transport request with clear description"
+      },
+      {
+        "step": 2,
+        "activity": "Develop and unit test",
+        "responsible": "Developer",
+        "documentation": "Code comments and unit tests"
+      },
+      {
+        "step": 3,
+        "activity": "Code review",
+        "responsible": "Technical Lead",
+        "documentation": "Code review checklist"
+      },
+      {
+        "step": 4,
+        "activity": "Run code inspector",
+        "responsible": "Developer",
+        "documentation": "Code inspector results"
+      },
+      {
+        "step": 5,
+        "activity": "Integration testing",
+        "responsible": "Developer/Tester",
+        "documentation": "Test results and evidence"
+      },
+      {
+        "step": 6,
+        "activity": "Release transport",
+        "responsible": "Developer",
+        "documentation": "Release notes"
+      },
+      {
+        "step": 7,
+        "activity": "Import to QA",
+        "responsible": "Basis Team",
+        "documentation": "Import log"
+      },
+      {
+        "step": 8,
+        "activity": "Import to UAT (after QA approval)",
+        "responsible": "Basis Team",
+        "documentation": "Import log and UAT sign-off"
+      },
+      {
+        "step": 9,
+        "activity": "Import to PROD (after UAT approval)",
+        "responsible": "Basis Team",
+        "documentation": "Import log and CAB approval"
+      }
+    ],
+    "approval_required": [
+      "Standard table modifications",
+      "User exit implementations",
+      "Performance-critical code",
+      "Security-related changes"
+    ]
+  },
+  
+  "backup_and_recovery": {
+    "code_backup": {
+      "method": "abapGit daily sync",
+      "retention": "Indefinite in Git"
+    },
+    "transport_backup": {
+      "method": "File system backup",
+      "frequency": "Daily",
+      "retention": "90 days"
+    },
+    "database_backup": {
+      "method": "Oracle RMAN",
+      "frequency": "Daily full, hourly incremental",
+      "retention": "30 days"
+    }
+  },
+  
+  "performance_monitoring": {
+    "tools": [
+      {
+        "transaction": "ST05",
+        "description": "SQL Trace",
+        "usage": "Analyze database performance"
+      },
+      {
+        "transaction": "ST12",
+        "description": "Single Transaction Analysis",
+        "usage": "Comprehensive performance analysis"
+      },
+      {
+        "transaction": "SAT",
+        "description": "Runtime Analysis",
+        "usage": "ABAP code performance"
+      }
+    ],
+    "performance_standards": {
+      "response_time": "< 3 seconds for interactive programs",
+      "batch_processing": "Documented and optimized",
+      "database_access": "Minimize SELECT statements, use buffering where appropriate"
+    }
+  },
+  
+  "documentation_requirements": {
+    "mandatory_documentation": [
+      "Functional specification",
+      "Technical specification",
+      "Test plan and results",
+      "User manual (if applicable)",
+      "Transport documentation"
+    ],
+    "code_documentation": [
+      "Header comments with purpose, author, date",
+      "Inline comments for complex logic",
+      "Parameter documentation",
+      "Change history"
+    ]
+  },
+  
+  "contacts": {
+    "development_team": {
+      "sd_lead": "sd.lead@company.com",
+      "mm_lead": "mm.lead@company.com",
+      "wm_lead": "wm.lead@company.com",
+      "technical_architect": "tech.architect@company.com"
+    },
+    "support": {
+      "basis_team": "basis.support@company.com",
+      "transport_coordinator": "transport.coord@company.com",
+      "change_manager": "change.mgr@company.com"
+    }
+  }
+}

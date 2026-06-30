@@ -1,0 +1,538 @@
+# FUNCTIONAL AND TECHNICAL SPECIFICATION
+## Enhanced Credit Validation for Order-to-Cash Process
+
+**Document Control**
+- **Function Module**: Z_SD_VALIDATE_O2C_CREDIT_EXT
+- **Version**: 1.0
+- **Date**: 2026-06-18
+- **Author**: SAP Delivery Manager
+- **Package**: ZFG_O2C
+- **Transport Request**: DEVK9xxxxx (to be assigned)
+- **Status**: Draft for Review
+
+---
+
+## 1. OVERVIEW
+
+### 1.1 Business Context
+Unilever's Order-to-Cash process requires real-time credit validation before sales order creation to minimize credit risk and prevent order blocks. The existing function module `Z_SD_CHECK_O2C_CREDIT` provides basic credit limit checking against the customer master (KNKK). However, business requirements have evolved to include:
+
+- Multi-level credit checks (customer group, sales organization, division)
+- Dynamic credit exposure calculation including open orders and deliveries
+- Credit hold validation with automatic release rules
+- Integration with external credit scoring systems
+- Detailed audit trail for compliance
+
+### 1.2 Problem Statement
+Current limitations of `Z_SD_CHECK_O2C_CREDIT`:
+- Only checks static credit limit from KNKK table
+- Does not consider open orders or pending deliveries in exposure calculation
+- No integration with external credit bureaus
+- Limited audit trail for credit decisions
+- Cannot handle complex credit scenarios (e.g., parent-child customer relationships)
+
+### 1.3 High-Level Solution Approach
+Create an enhanced credit validation function module `Z_SD_VALIDATE_O2C_CREDIT_EXT` that:
+- Extends existing credit check logic with comprehensive exposure calculation
+- Integrates with external credit scoring APIs
+- Provides detailed credit decision reasoning
+- Maintains complete audit trail in custom table `ZSD_CREDIT_LOG`
+- Supports configurable credit rules via `ZSD_CREDIT_RULES` table
+- Leverages standard SAP credit management tables (KNKK, KNKA, UKM_CREDIT)
+
+### 1.4 Stakeholders
+| Role | Name/Team | Responsibility |
+|------|-----------|----------------|
+| **Business Owner** | Credit & Collections Manager | Define credit policies and approval rules |
+| **Functional Lead** | O2C Process Lead | Validate business requirements |
+| **Technical Lead** | SAP Development Manager | Review technical design |
+| **Developer** | ABAP Development Team | Implement function module |
+| **Tester** | QA Team | Execute test scenarios |
+| **End Users** | Sales Order Entry Team | Use credit validation in order creation |
+
+---
+
+## 2. SCOPE
+
+### 2.1 In Scope
+✅ **Functional**:
+- Real-time credit limit validation before order creation
+- Dynamic credit exposure calculation (open orders + deliveries + invoices)
+- Integration with external credit scoring API (optional)
+- Credit hold validation and automatic release logic
+- Parent-child customer credit consolidation
+- Configurable credit rules by customer group and sales organization
+- Detailed credit decision audit trail
+
+✅ **Technical**:
+- New function module `Z_SD_VALIDATE_O2C_CREDIT_EXT` in function group `ZFG_O2C`
+- Custom table `ZSD_CREDIT_LOG` for audit trail
+- Custom table `ZSD_CREDIT_RULES` for configuration
+- Integration with standard SAP tables (KNKK, KNKA, VBAK, VBUK, VBRK)
+- RFC-enabled for external system calls
+- ABAP Unit tests for all scenarios
+
+✅ **Integration Points**:
+- Called from `Z_SD_CREATE_O2C_ORDER` before order creation
+- Called from custom Fiori app for real-time credit check
+- Optional integration with external credit bureau API
+
+### 2.2 Out of Scope
+❌ **Not Included**:
+- Modification of standard SAP credit management (FD32, FD33)
+- Automatic credit limit adjustment (requires manual approval)
+- Credit insurance integration
+- Dunning process enhancements
+- Customer payment behavior analysis (future phase)
+- Integration with SAP Credit Management (UKM) - uses standard tables only
+
+### 2.3 Boundaries and Interfaces
+**System Boundaries**:
+- Function module operates within SAP R/3 environment
+- Does not modify standard SAP objects
+- Uses standard SAP authorization objects (F_KNA1_BUK, F_KNKK_KRE)
+
+**Interface Boundaries**:
+- Input: Customer number, proposed order value, sales organization
+- Output: Credit decision (approved/rejected), exposure details, decision reason
+- External: Optional REST API call to credit bureau (via HTTP destination)
+
+---
+
+## 3. FUNCTIONAL DESCRIPTION
+
+### 3.1 Business Process Description
+
+**Current Process** (AS-IS):
+1. Sales representative creates sales order in VA01
+2. System checks basic credit limit from KNKK table
+3. If limit exceeded, order is blocked (VBUK-CMGST = 'B')
+4. Credit manager manually reviews and releases order in VKM1
+5. Order proceeds to delivery and billing
+
+**Enhanced Process** (TO-BE):
+1. Sales representative creates sales order in VA01 or custom Fiori app
+2. System calls `Z_SD_VALIDATE_O2C_CREDIT_EXT` before order creation
+3. Function module performs comprehensive credit check:
+   a. Retrieves customer credit limit from KNKK
+   b. Calculates current exposure (open orders + deliveries + invoices)
+   c. Checks credit hold status (KNKK-KLIMK, KNKK-CTLPC)
+   d. Applies configurable credit rules from ZSD_CREDIT_RULES
+   e. Optionally calls external credit bureau API for credit score
+   f. Evaluates parent-child customer relationships
+   g. Logs decision to ZSD_CREDIT_LOG
+4. If approved: Order creation proceeds
+5. If rejected: User receives detailed rejection reason with exposure breakdown
+6. If manual review required: Order is flagged for credit manager review
+
+### 3.2 Business Rules
+
+**BR-001**: Credit Limit Check
+- If (Proposed Order Value + Current Exposure) ≤ Credit Limit, then APPROVE
+- If (Proposed Order Value + Current Exposure) > Credit Limit, then REJECT or MANUAL_REVIEW
+
+**BR-002**: Current Exposure Calculation
+- Current Exposure = Open Orders Value + Open Deliveries Value + Open Invoices Value
+- Open Orders: VBAK where VBUK-GBSTK ≠ 'C' (not fully delivered)
+- Open Deliveries: LIKP where VBUK-LFSTK ≠ 'C' (not fully invoiced)
+- Open Invoices: VBRK where BSID-AUGBL = '' (not cleared)
+
+**BR-003**: Credit Hold Validation
+- If KNKK-CTLPC = 'X' (credit hold active), then REJECT
+- If KNKK-KLIMK = 0 (no credit limit set), then MANUAL_REVIEW
+
+**BR-004**: Customer Group Rules
+- Apply tolerance percentage from ZSD_CREDIT_RULES based on KDGRP
+- Key Accounts (KDGRP = '01'): 5% tolerance
+- Standard Customers (KDGRP = '02'): 2% tolerance
+- Small Customers (KDGRP = '03'): 0% tolerance
+
+**BR-005**: Automatic Release Rules
+- If exposure < 95% of limit AND no overdue invoices, then AUTO_APPROVE
+- If exposure between 95-100% of limit, then MANUAL_REVIEW
+- If exposure > 100% of limit, then REJECT
+
+---
+
+## 4. FUNCTIONAL REQUIREMENTS
+
+**FR-001** [Must Have]: System shall retrieve customer credit limit from KNKK table based on customer number and credit control area
+
+**FR-002** [Must Have]: System shall calculate current credit exposure including open orders, deliveries, and invoices
+
+**FR-003** [Must Have]: System shall compare (proposed order value + current exposure) against credit limit
+
+**FR-004** [Must Have]: System shall return credit decision (APPROVED/REJECTED/MANUAL_REVIEW)
+
+**FR-005** [Must Have]: System shall apply tolerance rules from ZSD_CREDIT_RULES based on customer group
+
+**FR-006** [Must Have]: System shall check credit hold status (KNKK-CTLPC) and reject if active
+
+**FR-007** [Must Have]: System shall log all credit decisions to ZSD_CREDIT_LOG table
+
+**FR-008** [Must Have]: System shall return detailed exposure breakdown in ET_EXPOSURE_DETAILS table
+
+**FR-009** [Should Have]: System shall consolidate credit exposure for parent-child customer relationships
+
+**FR-010** [Should Have]: System shall integrate with external credit bureau API when I_CHECK_EXTERNAL = 'X'
+
+---
+
+## 5. DEPENDENCIES/CONSTRAINTS/LIMITATIONS
+
+### 5.1 Technical Dependencies
+- **SAP Tables**: KNKK, KNKA, KNA1, KNVV, VBAK, VBUK, LIKP, LIPS, VBRK, BSID must be accessible
+- **Function Group**: ZFG_O2C must exist (created in transport DEVK900124)
+- **Authorization**: User must have authorization for F_KNA1_BUK and F_KNKK_KRE
+- **HTTP Destination**: External credit API requires HTTP destination configured in SM59
+
+### 5.2 Business Constraints
+- **Processing Time**: Function must complete within 2 seconds for real-time order entry
+- **Data Volume**: Must handle customers with up to 1,000 open documents
+- **Concurrency**: Must support 50 concurrent credit checks without performance degradation
+
+### 5.3 Known Limitations
+- **Currency Handling**: Does not handle multi-currency credit limits (uses single currency from KNKK)
+- **Historical Data**: Exposure calculation limited to current fiscal year (performance optimization)
+- **External API**: External credit check adds 500ms latency; should be used selectively
+- **Parent-Child**: Only supports one level of parent-child relationship (no multi-level hierarchy)
+
+---
+
+## 6. ASSUMPTIONS
+
+**ASM-001**: Customer master data (KNA1, KNKK) is maintained accurately and up-to-date
+
+**ASM-002**: Credit control area (KKBER) is consistently populated in KNKK
+
+**ASM-003**: External credit bureau API is available 99.9% of the time
+
+**ASM-004**: Currency exchange rates are maintained in TCURR table
+
+**ASM-005**: Open document data (VBAK, LIKP, VBRK) is updated in real-time
+
+---
+
+## 7. SECURITY REQUIREMENTS
+
+### 7.1 Authorization Requirements
+- **F_KNA1_BUK**: Customer Master Authorization (Display)
+- **F_KNKK_KRE**: Credit Management Authorization (Display)
+- **Z_CREDIT_CHK**: Custom authorization object for credit check execution
+
+### 7.2 Data Protection
+- **PII Data**: Customer credit limit is sensitive financial data
+- **Encryption**: Credit limit data must be encrypted in ZSD_CREDIT_LOG table
+- **Retention**: Log data retained for 7 years per GDPR compliance
+
+---
+
+## 8. TEST REQUIREMENTS
+
+### 8.1 Unit Test Scenarios
+
+**UT-001**: Credit Approved - Sufficient Credit Available
+- **Input**: Customer with 100,000 EUR limit, 50,000 EUR exposure, 30,000 EUR order
+- **Expected**: E_DECISION = 'APPROVED', E_AVAILABLE_CREDIT = 20,000 EUR
+
+**UT-002**: Credit Rejected - Insufficient Credit
+- **Input**: Customer with 100,000 EUR limit, 90,000 EUR exposure, 20,000 EUR order
+- **Expected**: E_DECISION = 'REJECTED', E_REASON_CODE = 'OVER_LIMIT'
+
+**UT-003**: Credit Hold Active
+- **Input**: Customer with KNKK-CTLPC = 'X'
+- **Expected**: E_DECISION = 'REJECTED', E_REASON_CODE = 'CREDIT_HOLD'
+
+---
+
+## 9. TECHNICAL LOGIC FOR DEVELOPMENT TEAM
+
+### 9.1 Function Module Signature
+
+```abap
+FUNCTION Z_SD_VALIDATE_O2C_CREDIT_EXT.
+*"----------------------------------------------------------------------
+*"*"Local Interface:
+*"  IMPORTING
+*"     VALUE(I_KUNNR) TYPE  KUNNR
+*"     VALUE(I_VKORG) TYPE  VKORG
+*"     VALUE(I_ORDER_VALUE) TYPE  WRBTR
+*"     VALUE(I_WAERS) TYPE  WAERS
+*"     VALUE(I_CHECK_EXTERNAL) TYPE  XFELD DEFAULT SPACE
+*"  EXPORTING
+*"     VALUE(E_DECISION) TYPE  ZDE_CREDIT_DECISION
+*"     VALUE(E_CREDIT_LIMIT) TYPE  WRBTR
+*"     VALUE(E_CURRENT_EXPOSURE) TYPE  WRBTR
+*"     VALUE(E_AVAILABLE_CREDIT) TYPE  WRBTR
+*"     VALUE(E_REASON_CODE) TYPE  ZDE_REASON_CODE
+*"     VALUE(E_REASON_TEXT) TYPE  ZDE_REASON_TEXT
+*"  TABLES
+*"      ET_EXPOSURE_DETAILS STRUCTURE  ZSTR_EXPOSURE_DETAIL
+*"  EXCEPTIONS
+*"      CUSTOMER_NOT_FOUND
+*"      CREDIT_DATA_NOT_FOUND
+*"      CURRENCY_CONVERSION_ERROR
+*"----------------------------------------------------------------------
+```
+
+### 9.2 SAP Objects to be Created/Modified
+
+**New Objects**:
+- Function Module: `Z_SD_VALIDATE_O2C_CREDIT_EXT`
+- Table: `ZSD_CREDIT_LOG` (Credit decision audit log)
+- Table: `ZSD_CREDIT_RULES` (Credit rules configuration)
+- Structure: `ZSTR_EXPOSURE_DETAIL` (Exposure breakdown)
+- Domain: `ZDE_CREDIT_DECISION` (Values: APPROVED/REJECTED/MANUAL_REVIEW)
+- Domain: `ZDE_REASON_CODE` (Credit decision reason codes)
+- Data Element: `ZDE_REASON_TEXT` (Reason text description)
+
+**Modified Objects**:
+- Function Group: `ZFG_O2C` (add new include)
+- Program: `Z_SD_CREATE_O2C_ORDER` (call new FM)
+
+### 9.3 Processing Steps
+
+1. **Input Validation**: Validate customer number and order value
+2. **Read Customer Master**: Query KNA1, KNKK, KNVV tables
+3. **Check Credit Hold**: Validate KNKK-CTLPC flag
+4. **Calculate Exposure**: Sum open orders, deliveries, invoices
+5. **Read Credit Rules**: Query ZSD_CREDIT_RULES for tolerance
+6. **Check Parent-Child**: Consolidate if parent customer exists
+7. **External Check**: Optional API call to credit bureau
+8. **Make Decision**: Apply business rules and return decision
+9. **Log Decision**: Insert record into ZSD_CREDIT_LOG
+
+---
+
+## 10. CASE CONFIGURATION LOGIC
+
+### 10.1 Configuration Tables
+
+**Table: ZSD_CREDIT_RULES**
+```
+Key Fields:
+- MANDT (Client)
+- KDGRP (Customer Group)
+- VKORG (Sales Organization)
+
+Data Fields:
+- TOLERANCE_PCT (Tolerance Percentage)
+- AUTO_APPROVE_PCT (Auto-Approve Threshold %)
+- MANUAL_REVIEW_PCT (Manual Review Threshold %)
+```
+
+**Table: ZSD_CREDIT_LOG**
+```
+Key Fields:
+- MANDT (Client)
+- LOG_ID (Unique Log ID - GUID)
+
+Data Fields:
+- KUNNR (Customer Number)
+- VKORG (Sales Organization)
+- ORDER_VALUE (Proposed Order Value)
+- CREDIT_LIMIT (Customer Credit Limit)
+- CURRENT_EXPOSURE (Calculated Exposure)
+- DECISION (Credit Decision)
+- REASON_CODE (Reason Code)
+- CHECK_DATE (Check Date)
+- CHECK_TIME (Check Time)
+- CHECK_USER (User ID)
+```
+
+### 10.2 IMG Configuration Path
+
+**Path**: Financial Accounting → Accounts Receivable → Credit Management → Credit Control Area
+
+**Steps**:
+1. Define Credit Control Area (OB45)
+2. Assign Company Codes to Credit Control Area (OB38)
+3. Define Credit Limit Check (OVA8)
+4. Maintain Credit Rules Table (SM30 - ZSD_CREDIT_RULES)
+
+---
+
+## 11. FLOW DIAGRAM
+
+### 11.1 Process Flow (Text Description)
+
+```
+START
+  ↓
+Receive Input Parameters (Customer, Order Value, Sales Org)
+  ↓
+Validate Input → If Invalid → Raise Exception → END
+  ↓
+Read Customer Master (KNA1, KNKK, KNVV)
+  ↓
+Check Credit Hold (KNKK-CTLPC) → If Active → Return REJECTED → END
+  ↓
+Calculate Current Exposure:
+  - Query Open Orders (VBAK/VBUK)
+  - Query Open Deliveries (LIKP/LIPS)
+  - Query Open Invoices (VBRK/BSID)
+  - Sum All Open Documents
+  ↓
+Read Credit Rules (ZSD_CREDIT_RULES)
+  ↓
+Apply Tolerance Percentage
+  ↓
+Check Parent-Child Relationship → If Parent Exists → Consolidate Exposure
+  ↓
+External Credit Check? → If Yes → Call External API
+  ↓
+Calculate Available Credit = Credit Limit - Current Exposure
+  ↓
+Make Credit Decision:
+  - If (Order Value + Exposure) ≤ Limit → APPROVED
+  - If (Order Value + Exposure) > Limit → REJECTED or MANUAL_REVIEW
+  ↓
+Log Credit Decision (ZSD_CREDIT_LOG)
+  ↓
+Return Results to Caller
+  ↓
+END
+```
+
+### 11.2 System Interaction Diagram (Text Description)
+
+```
+Sales Order Entry (VA01/Fiori)
+  ↓ Calls
+Z_SD_VALIDATE_O2C_CREDIT_EXT
+  ↓ Reads
+Customer Master Tables (KNA1, KNKK, KNVV)
+  ↓ Reads
+Open Documents (VBAK, VBUK, LIKP, VBRK, BSID)
+  ↓ Reads
+Configuration (ZSD_CREDIT_RULES)
+  ↓ Optional Call
+External Credit Bureau API (HTTP)
+  ↓ Writes
+Audit Log (ZSD_CREDIT_LOG)
+  ↓ Returns
+Credit Decision to Calling Program
+```
+
+---
+
+## 12. ASSESSMENT OF IMPACT ON AND OF EXISTING CUSTOMIZATION
+
+### 12.1 Impact on Existing Z-Objects
+
+**Z_SD_CHECK_O2C_CREDIT** (Existing Function Module):
+- **Impact**: No modification required
+- **Relationship**: New FM extends existing functionality
+- **Recommendation**: Keep for backward compatibility
+- **Migration**: Gradually migrate calling programs to new FM
+
+**ZFG_O2C** (Existing Function Group):
+- **Impact**: New function module added to group
+- **Changes**: Add new include `LZFG_O2C_VALIDATE_EXT.fugr`
+- **Risk**: Low - additive change only
+
+**Z_SD_CREATE_O2C_ORDER** (Existing Program):
+- **Impact**: Must be modified to call new credit check FM
+- **Changes**: Replace call to old FM with new FM
+- **Risk**: Medium - requires regression testing
+- **Mitigation**: Implement parallel run for 2 weeks
+
+**VBAK Custom Fields**:
+- **ZROUTE**: No impact
+- **ZPRIORITY**: Could be used for credit decision priority (future enhancement)
+- **ZDELIVERY_TYPE**: No impact
+- **ZCOST_CENTER**: No impact
+- **ZPROJECT_ID**: No impact
+- **ZCUSTOMER_GROUP**: Used in credit rules lookup
+- **ZSALES_CHANNEL**: No impact
+- **ZBILLING_BLOCK**: No impact
+- **ZSHIPPING_INSTR**: No impact
+- **ZEXT_REF**: No impact
+
+### 12.2 Impact on Standard SAP Functionality
+
+**Standard Credit Management (FD32/FD33)**:
+- **Impact**: None - new FM operates independently
+- **Integration**: Can coexist with standard credit management
+
+**Sales Order Creation (VA01)**:
+- **Impact**: None - credit check called before order creation
+- **Enhancement**: Can be integrated via user exit or BAdI
+
+### 12.3 Regression Testing Requirements
+
+**Critical Test Areas**:
+1. Existing order creation process (Z_SD_CREATE_O2C_ORDER)
+2. Credit limit checks for all customer groups
+3. Parent-child customer relationships
+4. Multi-currency order scenarios
+5. High-volume order entry (performance)
+
+**Test Data Requirements**:
+- Customers with various credit limits (0, 10K, 100K, 1M)
+- Customers with credit holds
+- Parent-child customer relationships
+- Open orders, deliveries, invoices in various statuses
+
+### 12.4 Deployment Strategy
+
+**Phase 1**: Development and Unit Testing (2 weeks)
+- Create function module and tables
+- Implement business logic
+- Execute unit tests
+
+**Phase 2**: Integration Testing (2 weeks)
+- Integrate with Z_SD_CREATE_O2C_ORDER
+- Test with Fiori app
+- Test external API integration
+
+**Phase 3**: User Acceptance Testing (2 weeks)
+- Business user testing
+- Performance testing
+- Security testing
+
+**Phase 4**: Production Deployment (1 week)
+- Deploy to QA environment
+- Parallel run with existing FM
+- Deploy to UAT1 environment
+- Deploy to PROD environment
+
+---
+
+## APPENDIX A: NAMING CONVENTIONS
+
+All objects follow Unilever SAP naming standards:
+- Function Module: `Z_SD_VALIDATE_O2C_CREDIT_EXT`
+- Tables: `ZSD_CREDIT_LOG`, `ZSD_CREDIT_RULES`
+- Structure: `ZSTR_EXPOSURE_DETAIL`
+- Domain: `ZDE_CREDIT_DECISION`, `ZDE_REASON_CODE`
+- Data Element: `ZDE_REASON_TEXT`
+
+---
+
+## APPENDIX B: TRANSPORT INFORMATION
+
+**Transport Request**: DEVK9xxxxx (to be assigned)
+**Transport Type**: Workbench Request
+**Target System**: Development → QA → UAT1 → Production
+**Objects Included**:
+- Function Module: Z_SD_VALIDATE_O2C_CREDIT_EXT
+- Tables: ZSD_CREDIT_LOG, ZSD_CREDIT_RULES
+- Structures: ZSTR_EXPOSURE_DETAIL
+- Domains: ZDE_CREDIT_DECISION, ZDE_REASON_CODE
+- Data Elements: ZDE_REASON_TEXT
+
+---
+
+## DOCUMENT APPROVAL
+
+| Role | Name | Signature | Date |
+|------|------|-----------|------|
+| Business Owner | Credit & Collections Manager | _____________ | ________ |
+| Functional Lead | O2C Process Lead | _____________ | ________ |
+| Technical Lead | SAP Development Manager | _____________ | ________ |
+| Quality Assurance | QA Manager | _____________ | ________ |
+
+---
+
+**END OF SPECIFICATION DOCUMENT**

@@ -1,0 +1,33 @@
+{
+  "name": "sap-repo-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for SAP Repository knowledge base via watsonx Orchestrate REST API",
+  "type": "module",
+  "bin": {
+    "sap-repo-mcp": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
+    "watch": "tsc --watch",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "sap",
+    "watsonx",
+    "orchestrate",
+    "knowledge-base"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.5",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.2"
+  }
+}

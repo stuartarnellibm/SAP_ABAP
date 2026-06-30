@@ -1,0 +1,508 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SAP R/3 Custom Object Development Guidelines",
+  "description": "Standards and guidelines for developing custom Z/Y objects in CPG environment",
+  "last_updated": "2026-06-17",
+  "system": "SAP R/3 ECC 6.0 On-Premise",
+  
+  "naming_conventions": {
+    "namespace": {
+      "primary": "Z",
+      "secondary": "Y",
+      "company_prefix": "CPG",
+      "pattern": "Z<company>_<module>_<object_type>_<name>",
+      "examples": [
+        "ZCPG_SD_ORDER_DASHBOARD",
+        "ZCPG_MM_BATCH_MANAGER",
+        "ZCPG_WM_SLOTTING_ENGINE"
+      ]
+    },
+    
+    "object_specific_naming": {
+      "programs": {
+        "pattern": "ZCPG_<module>_<purpose>",
+        "max_length": 40,
+        "examples": [
+          "ZCPG_SD_ORDER_DASHBOARD",
+          "ZCPG_MM_BATCH_EXPIRY_RPT",
+          "ZCPG_WM_PERFORMANCE_RPT"
+        ],
+        "prohibited": [
+          "Generic names (ZTEST, ZTEMP)",
+          "Developer initials (ZJSMITH)",
+          "Dates in name (Z20260617)"
+        ]
+      },
+      
+      "function_modules": {
+        "pattern": "ZCPG_<module>_<action>_<object>",
+        "max_length": 30,
+        "examples": [
+          "ZCPG_SD_VALIDATE_ORDER",
+          "ZCPG_MM_CHECK_BATCH_EXPIRY",
+          "ZCPG_WM_CREATE_TRANSFER_ORDER"
+        ],
+        "naming_rules": [
+          "Use verb for action (GET, SET, CREATE, UPDATE, DELETE, VALIDATE, CHECK)",
+          "Be specific about object",
+          "Avoid abbreviations unless standard"
+        ]
+      },
+      
+      "function_groups": {
+        "pattern": "ZCPG_<module>_<purpose>",
+        "max_length": 26,
+        "examples": [
+          "ZCPG_SD_ORDER_UTILS",
+          "ZCPG_MM_BATCH_UTILS",
+          "ZCPG_WM_TO_UTILS"
+        ]
+      },
+      
+      "classes": {
+        "pattern": "ZCL_CPG_<module>_<purpose>",
+        "max_length": 30,
+        "examples": [
+          "ZCL_CPG_SD_ORDER_PROCESSOR",
+          "ZCL_CPG_MM_BATCH_MANAGER",
+          "ZCL_CPG_WM_SLOTTING_ENGINE"
+        ],
+        "class_types": {
+          "business_logic": "ZCL_CPG_<module>_<entity>",
+          "utility": "ZCL_CPG_UTIL_<purpose>",
+          "exception": "ZCX_CPG_<error_type>",
+          "interface": "ZIF_CPG_<purpose>"
+        }
+      },
+      
+      "interfaces": {
+        "pattern": "ZIF_CPG_<purpose>",
+        "max_length": 30,
+        "examples": [
+          "ZIF_CPG_ORDER_VALIDATOR",
+          "ZIF_CPG_BATCH_CHECKER",
+          "ZIF_CPG_WM_STRATEGY"
+        ]
+      },
+      
+      "tables": {
+        "pattern": "ZCPG_<module>_<entity>",
+        "max_length": 16,
+        "examples": [
+          "ZCPG_ORDER_EXT",
+          "ZCPG_BATCH_TRACK",
+          "ZCPG_WM_CONFIG"
+        ],
+        "table_types": {
+          "master_data": "ZCPG_<entity>_MASTER",
+          "transaction_data": "ZCPG_<entity>_TXN",
+          "configuration": "ZCPG_<entity>_CONFIG",
+          "log": "ZCPG_<entity>_LOG"
+        }
+      },
+      
+      "data_elements": {
+        "pattern": "ZCPG_<purpose>",
+        "max_length": 30,
+        "examples": [
+          "ZCPG_ORDER_STATUS",
+          "ZCPG_BATCH_EXPIRY_DATE",
+          "ZCPG_WM_PRIORITY"
+        ]
+      },
+      
+      "domains": {
+        "pattern": "ZCPG_<purpose>",
+        "max_length": 30,
+        "examples": [
+          "ZCPG_STATUS",
+          "ZCPG_PRIORITY",
+          "ZCPG_FLAG"
+        ]
+      },
+      
+      "structures": {
+        "pattern": "ZCPG_S_<purpose>",
+        "max_length": 30,
+        "examples": [
+          "ZCPG_S_ORDER_HEADER",
+          "ZCPG_S_BATCH_INFO",
+          "ZCPG_S_WM_TASK"
+        ]
+      },
+      
+      "table_types": {
+        "pattern": "ZCPG_T_<purpose>",
+        "max_length": 30,
+        "examples": [
+          "ZCPG_T_ORDER_ITEMS",
+          "ZCPG_T_BATCH_LIST",
+          "ZCPG_T_WM_TASKS"
+        ]
+      }
+    }
+  },
+  
+  "development_standards": {
+    "code_structure": {
+      "header_comments": {
+        "mandatory": true,
+        "template": [
+          "*&---------------------------------------------------------------------*",
+          "*& Report/Class/FM: <object_name>",
+          "*&---------------------------------------------------------------------*",
+          "*& Purpose: <brief description>",
+          "*& Author: <name>",
+          "*& Date: <YYYY-MM-DD>",
+          "*& Transport: <transport_number>",
+          "*&---------------------------------------------------------------------*",
+          "*& Change History:",
+          "*& Date       | Author    | Transport  | Description",
+          "*& -----------|-----------|------------|---------------------------",
+          "*& YYYY-MM-DD | Name      | CPDK9##### | Initial development",
+          "*&---------------------------------------------------------------------*"
+        ]
+      },
+      
+      "inline_comments": {
+        "required_for": [
+          "Complex logic",
+          "Business rules",
+          "Workarounds",
+          "Performance optimizations"
+        ],
+        "style": "Clear and concise, explain WHY not WHAT"
+      },
+      
+      "method_documentation": {
+        "mandatory": true,
+        "include": [
+          "Purpose",
+          "Parameters (importing, exporting, changing)",
+          "Return values",
+          "Exceptions",
+          "Example usage"
+        ]
+      }
+    },
+    
+    "coding_standards": {
+      "abap_syntax": {
+        "version": "ABAP 7.40+",
+        "preferred_constructs": [
+          "Inline declarations (DATA(lv_var) = ...)",
+          "Constructor expressions (VALUE, CORRESPONDING, NEW)",
+          "String templates (|text { variable }|)",
+          "LOOP AT ... INTO DATA(ls_line)",
+          "Method chaining where appropriate"
+        ],
+        "avoid": [
+          "MOVE TO (use = instead)",
+          "WRITE TO (use string templates)",
+          "Nested IFs (use CASE or guard clauses)",
+          "SELECT * (always specify fields)"
+        ]
+      },
+      
+      "variable_naming": {
+        "prefixes": {
+          "local_variable": "lv_",
+          "local_structure": "ls_",
+          "local_table": "lt_",
+          "global_variable": "gv_",
+          "global_structure": "gs_",
+          "global_table": "gt_",
+          "parameter": "iv_/ev_/cv_ (importing/exporting/changing)",
+          "field_symbol": "<fs_>",
+          "reference": "lr_"
+        },
+        "examples": [
+          "DATA: lv_order_number TYPE vbeln_va,",
+          "      ls_order_header TYPE vbak,",
+          "      lt_order_items  TYPE TABLE OF vbap."
+        ]
+      },
+      
+      "database_access": {
+        "rules": [
+          "Always use WHERE clause",
+          "Specify field list (no SELECT *)",
+          "Use FOR ALL ENTRIES with INITIAL check",
+          "Consider buffering for master data",
+          "Use database views where appropriate",
+          "Avoid nested SELECTs in loops",
+          "Use INNER JOIN over nested SELECTs"
+        ],
+        "examples": [
+          "Good: SELECT vbeln, erdat, kunnr FROM vbak INTO TABLE @lt_orders WHERE erdat = @lv_date.",
+          "Bad: SELECT * FROM vbak."
+        ]
+      },
+      
+      "error_handling": {
+        "mandatory": true,
+        "approaches": [
+          "Use exceptions in classes",
+          "Check sy-subrc after database operations",
+          "Use BAPI RETURN parameter",
+          "Log errors appropriately",
+          "Provide meaningful error messages"
+        ],
+        "example": [
+          "TRY.",
+          "    \" Code that might fail",
+          "  CATCH zcx_cpg_error INTO DATA(lx_error).",
+          "    \" Handle error",
+          "    MESSAGE lx_error->get_text( ) TYPE 'E'.",
+          "ENDTRY."
+        ]
+      },
+      
+      "performance": {
+        "guidelines": [
+          "Minimize database calls",
+          "Use internal tables efficiently",
+          "Avoid nested loops where possible",
+          "Use READ TABLE BINARY SEARCH with sorted tables",
+          "Consider parallel processing for large volumes",
+          "Profile code with SAT/ST05",
+          "Set performance benchmarks"
+        ],
+        "benchmarks": {
+          "interactive_programs": "< 3 seconds response time",
+          "reports": "< 30 seconds for standard data volumes",
+          "batch_jobs": "Document expected runtime"
+        }
+      }
+    },
+    
+    "object_oriented_design": {
+      "principles": [
+        "SOLID principles",
+        "Single Responsibility",
+        "Open/Closed",
+        "Liskov Substitution",
+        "Interface Segregation",
+        "Dependency Inversion"
+      ],
+      
+      "class_design": {
+        "structure": [
+          "Public section: Interfaces and public methods",
+          "Protected section: Methods for inheritance",
+          "Private section: Internal implementation"
+        ],
+        "best_practices": [
+          "Keep classes focused and cohesive",
+          "Use interfaces for loose coupling",
+          "Favor composition over inheritance",
+          "Make classes testable",
+          "Use dependency injection"
+        ]
+      },
+      
+      "exception_handling": {
+        "create_custom_exceptions": true,
+        "pattern": "ZCX_CPG_<error_type>",
+        "examples": [
+          "ZCX_CPG_ORDER_ERROR",
+          "ZCX_CPG_BATCH_ERROR",
+          "ZCX_CPG_WM_ERROR"
+        ],
+        "inheritance": "Inherit from CX_STATIC_CHECK or CX_DYNAMIC_CHECK"
+      }
+    }
+  },
+  
+  "testing_requirements": {
+    "unit_testing": {
+      "framework": "ABAP Unit",
+      "coverage_target": "80%",
+      "mandatory_for": [
+        "All classes",
+        "Critical function modules",
+        "Complex algorithms"
+      ],
+      "test_class_naming": "ltcl_<class_name>",
+      "best_practices": [
+        "Test one thing per test method",
+        "Use descriptive test method names",
+        "Arrange-Act-Assert pattern",
+        "Mock external dependencies",
+        "Test edge cases and error conditions"
+      ]
+    },
+    
+    "integration_testing": {
+      "required": true,
+      "test_scenarios": [
+        "End-to-end business processes",
+        "Interface integration",
+        "Performance under load",
+        "Error handling"
+      ]
+    }
+  },
+  
+  "documentation_requirements": {
+    "mandatory_documents": [
+      {
+        "document": "Functional Specification",
+        "content": [
+          "Business requirement",
+          "Process flow",
+          "User interface mockups",
+          "Business rules",
+          "Test scenarios"
+        ]
+      },
+      {
+        "document": "Technical Specification",
+        "content": [
+          "Architecture design",
+          "Object list",
+          "Data model",
+          "Interface specifications",
+          "Error handling",
+          "Performance considerations"
+        ]
+      },
+      {
+        "document": "User Manual",
+        "content": [
+          "How to use the functionality",
+          "Screenshots",
+          "Common scenarios",
+          "Troubleshooting"
+        ],
+        "required_for": "User-facing programs"
+      },
+      {
+        "document": "Test Documentation",
+        "content": [
+          "Test plan",
+          "Test cases",
+          "Test results",
+          "Defect log"
+        ]
+      }
+    ],
+    
+    "code_documentation": {
+      "inline_comments": "Explain complex logic and business rules",
+      "method_documentation": "Purpose, parameters, return values, exceptions",
+      "class_documentation": "Purpose, usage examples, dependencies"
+    }
+  },
+  
+  "package_assignment": {
+    "rules": [
+      "All custom objects must be in Z packages",
+      "Use appropriate sub-package based on module",
+      "Set correct transport layer (ZCPG)",
+      "Assign to proper software component (HOME)"
+    ],
+    "package_structure": {
+      "ZCPG": "Root package",
+      "ZCPG_SD": "Sales & Distribution",
+      "ZCPG_MM": "Materials Management",
+      "ZCPG_WM": "Warehouse Management",
+      "ZCPG_LE": "Logistics Execution",
+      "ZCPG_COMMON": "Common utilities"
+    }
+  },
+  
+  "transport_management": {
+    "rules": [
+      "One transport per development task",
+      "Clear transport description",
+      "Include all related objects",
+      "Test before release",
+      "Document in transport text"
+    ],
+    "transport_text_template": [
+      "Module: <SD/MM/WM/LE>",
+      "Purpose: <brief description>",
+      "Objects: <list of main objects>",
+      "Testing: <test results reference>",
+      "Dependencies: <any dependencies>"
+    ]
+  },
+  
+  "code_review_checklist": {
+    "functionality": [
+      "Meets business requirements",
+      "Handles all scenarios",
+      "Error handling implemented",
+      "Edge cases covered"
+    ],
+    "code_quality": [
+      "Follows naming conventions",
+      "Proper comments and documentation",
+      "No code duplication",
+      "Modular and maintainable",
+      "ABAP best practices followed"
+    ],
+    "performance": [
+      "Database access optimized",
+      "No performance bottlenecks",
+      "Meets performance benchmarks",
+      "Profiled with SAT/ST05"
+    ],
+    "security": [
+      "Authorization checks implemented",
+      "No SQL injection vulnerabilities",
+      "Sensitive data protected",
+      "Audit trail where required"
+    ],
+    "testing": [
+      "Unit tests written and passing",
+      "Integration tests completed",
+      "Test coverage adequate",
+      "Test documentation complete"
+    ]
+  },
+  
+  "version_control": {
+    "system": "abapGit",
+    "repository": "https://github.com/company/sap-cpg-developments",
+    "branching_strategy": {
+      "main": "Production-ready code",
+      "develop": "Integration branch",
+      "feature/*": "Feature development",
+      "hotfix/*": "Production fixes"
+    },
+    "commit_message_format": "<transport> - <module> - <description>",
+    "sync_frequency": "Daily"
+  },
+  
+  "deprecation_policy": {
+    "process": [
+      "Mark object as deprecated in comments",
+      "Document replacement object",
+      "Notify users (if applicable)",
+      "Keep for 2 release cycles",
+      "Remove after notification period"
+    ],
+    "deprecation_comment": [
+      "* DEPRECATED: This object is deprecated as of <date>",
+      "* Use <replacement_object> instead",
+      "* Will be removed in <future_date>"
+    ]
+  },
+  
+  "reusability_guidelines": {
+    "create_reusable_components": [
+      "Common utilities in ZCPG_COMMON package",
+      "Generic function modules",
+      "Utility classes",
+      "Shared interfaces"
+    ],
+    "avoid_duplication": [
+      "Search for existing functionality first",
+      "Refactor common code into utilities",
+      "Use inheritance and composition",
+      "Document reusable components"
+    ]
+  }
+}

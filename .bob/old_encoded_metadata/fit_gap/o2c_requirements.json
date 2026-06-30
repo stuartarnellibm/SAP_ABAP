@@ -1,0 +1,496 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Order-to-Cash Fit-Gap Analysis - CPG Requirements",
+  "description": "Business requirements and fit-gap analysis for CPG Order-to-Cash processes",
+  "last_updated": "2026-06-17",
+  "system": "SAP R/3 ECC 6.0 On-Premise",
+  "industry": "Consumer Packaged Goods (CPG)",
+  
+  "business_processes": {
+    "customer_master_management": {
+      "process_id": "O2C-001",
+      "description": "Customer Master Data Management",
+      "requirements": [
+        {
+          "req_id": "O2C-001-01",
+          "description": "Customer hierarchy for retail chains",
+          "priority": "High",
+          "fit_gap": "Gap",
+          "sap_standard": "Partial - Standard customer hierarchy exists",
+          "gap_description": "Need multi-level hierarchy with promotional pricing at chain level",
+          "solution_approach": "Custom",
+          "solution_details": {
+            "type": "Enhancement",
+            "objects": [
+              "ZCPG_CUSTOMER_HIERARCHY table",
+              "ZCL_CPG_SD_CUSTOMER_MANAGER class",
+              "BADI implementation for customer validation"
+            ],
+            "effort_days": 15,
+            "complexity": "Medium"
+          }
+        },
+        {
+          "req_id": "O2C-001-02",
+          "description": "Customer credit management with trade terms",
+          "priority": "High",
+          "fit_gap": "Fit",
+          "sap_standard": "Standard credit management (FD32)",
+          "solution_approach": "Standard",
+          "configuration": [
+            "Credit control area setup",
+            "Credit limit assignment",
+            "Automatic credit check in sales order"
+          ]
+        },
+        {
+          "req_id": "O2C-001-03",
+          "description": "Customer-specific pricing agreements",
+          "priority": "High",
+          "fit_gap": "Fit",
+          "sap_standard": "Condition technique (VK11)",
+          "solution_approach": "Standard",
+          "configuration": [
+            "Customer-specific condition records",
+            "Pricing procedure configuration"
+          ]
+        }
+      ]
+    },
+    
+    "sales_order_processing": {
+      "process_id": "O2C-002",
+      "description": "Sales Order Creation and Management",
+      "requirements": [
+        {
+          "req_id": "O2C-002-01",
+          "description": "Promotional order processing with trade allowances",
+          "priority": "Critical",
+          "fit_gap": "Gap",
+          "sap_standard": "Basic promotion support",
+          "gap_description": "Need complex promotional pricing with multiple tiers, trade spend tracking, and accrual management",
+          "solution_approach": "Custom",
+          "solution_details": {
+            "type": "Custom Development",
+            "objects": [
+              "ZCPG_PROMO_MASTER table",
+              "ZCPG_TRADE_ALLOWANCE table",
+              "ZCL_CPG_SD_PROMO_ENGINE class",
+              "USEREXIT_PRICING_PREPARE_TKOMP enhancement",
+              "ZCPG_SD_PROMO_VALIDATE function module"
+            ],
+            "effort_days": 30,
+            "complexity": "High"
+          },
+          "business_rules": [
+            "Promotional pricing based on volume tiers",
+            "Trade allowances calculated at order level",
+            "Accrual posting to finance",
+            "Promotion eligibility validation"
+          ]
+        },
+        {
+          "req_id": "O2C-002-02",
+          "description": "EDI order intake (EDI 850)",
+          "priority": "Critical",
+          "fit_gap": "Gap",
+          "sap_standard": "Standard EDI framework exists",
+          "gap_description": "Need custom mapping for CPG-specific fields and validation",
+          "solution_approach": "Custom",
+          "solution_details": {
+            "type": "Interface Development",
+            "objects": [
+              "ZCPG_EDI_850_INBOUND program",
+              "ZCPG_EDI_MAPPING table",
+              "ZCL_CPG_EDI_PROCESSOR class"
+            ],
+            "effort_days": 20,
+            "complexity": "Medium"
+          }
+        },
+        {
+          "req_id": "O2C-002-03",
+          "description": "Minimum order quantity validation",
+          "priority": "Medium",
+          "fit_gap": "Fit",
+          "sap_standard": "Material master minimum order quantity",
+          "solution_approach": "Standard",
+          "configuration": [
+            "Set minimum order quantity in material master",
+            "Configure incompletion procedure"
+          ]
+        },
+        {
+          "req_id": "O2C-002-04",
+          "description": "Order confirmation (EDI 855)",
+          "priority": "High",
+          "fit_gap": "Gap",
+          "sap_standard": "Standard EDI framework",
+          "gap_description": "Need real-time confirmation with ATP information",
+          "solution_approach": "Custom",
+          "solution_details": {
+            "type": "Interface Development",
+            "objects": [
+              "ZCPG_EDI_855_OUTBOUND program",
+              "User exit in order save"
+            ],
+            "effort_days": 15,
+            "complexity": "Medium"
+          }
+        },
+        {
+          "req_id": "O2C-002-05",
+          "description": "Backorder management",
+          "priority": "High",
+          "fit_gap": "Fit",
+          "sap_standard": "Standard backorder processing",
+          "solution_approach": "Standard",
+          "configuration": [
+            "Schedule line category configuration",
+            "Backorder processing program (V_RA)"
+          ]
+        }
+      ]
+    },
+    
+    "pricing_and_conditions": {
+      "process_id": "O2C-003",
+      "description": "Pricing and Condition Management",
+      "requirements": [
+        {
+          "req_id": "O2C-003-01",
+          "description": "Volume-based tiered pricing",
+          "priority": "High",
+          "fit_gap": "Fit",
+          "sap_standard": "Scale-based pricing in condition technique",
+          "solution_approach": "Standard",
+          "configuration": [
+            "Create scale-based condition types",
+            "Maintain condition records with scales"
+          ]
+        },
+        {
+          "req_id": "O2C-003-02",
+          "description": "Promotional pricing with date ranges",
+          "priority": "Critical",
+          "fit_gap": "Partial Fit",
+          "sap_standard": "Date-based condition records",
+          "gap_description": "Need promotional campaign management and approval workflow",
+          "solution_approach": "Hybrid",
+          "solution_details": {
+            "type": "Configuration + Custom",
+            "standard_config": "Date-based condition records",
+            "custom_objects": [
+              "ZCPG_PROMO_CAMPAIGN table",
+              "ZCPG_SD_PROMO_APPROVAL workflow",
+              "ZCPG_SD01 - Promotion Dashboard"
+            ],
+            "effort_days": 25,
+            "complexity": "High"
+          }
+        },
+        {
+          "req_id": "O2C-003-03",
+          "description": "Trade spend accruals",
+          "priority": "High",
+          "fit_gap": "Gap",
+          "sap_standard": "Not available",
+          "gap_description": "Need automatic accrual calculation and posting to finance",
+          "solution_approach": "Custom",
+          "solution_details": {
+            "type": "Custom Development",
+            "objects": [
+              "ZCPG_TRADE_ACCRUAL table",
+              "ZCL_CPG_SD_ACCRUAL_ENGINE class",
+              "ZCPG_SD_ACCRUAL_POST program",
+              "FI posting interface"
+            ],
+            "effort_days": 20,
+            "complexity": "High"
+          }
+        },
+        {
+          "req_id": "O2C-003-04",
+          "description": "Customer-specific pricing with validity dates",
+          "priority": "High",
+          "fit_gap": "Fit",
+          "sap_standard": "Customer-specific condition records with validity",
+          "solution_approach": "Standard",
+          "configuration": [
+            "Condition type configuration",
+            "Access sequence setup",
+            "Pricing procedure"
+          ]
+        }
+      ]
+    },
+    
+    "delivery_processing": {
+      "process_id": "O2C-004",
+      "description": "Delivery Creation and Processing",
+      "requirements": [
+        {
+          "req_id": "O2C-004-01",
+          "description": "Delivery consolidation by customer and ship-to",
+          "priority": "High",
+          "fit_gap": "Fit",
+          "sap_standard": "Collective delivery processing (VL10A)",
+          "solution_approach": "Standard",
+          "configuration": [
+            "Delivery type configuration",
+            "Collective processing settings"
+          ]
+        },
+        {
+          "req_id": "O2C-004-02",
+          "description": "Delivery window management",
+          "priority": "Medium",
+          "fit_gap": "Gap",
+          "sap_standard": "Basic delivery date",
+          "gap_description": "Need time window (e.g., 8AM-12PM) for CPG deliveries",
+          "solution_approach": "Custom",
+          "solution_details": {
+            "type": "Enhancement",
+            "objects": [
+              "ZCPG_DELIVERY_WINDOW table",
+              "CI_LIKP_APPEND for delivery window fields",
+              "User exit in delivery creation"
+            ],
+            "effort_days": 10,
+            "complexity": "Low"
+          }
+        },
+        {
+          "req_id": "O2C-004-03",
+          "description": "Advanced shipping notice (ASN/EDI 856)",
+          "priority": "Critical",
+          "fit_gap": "Gap",
+          "sap_standard": "Standard EDI framework",
+          "gap_description": "Need real-time ASN with pallet/case details",
+          "solution_approach": "Custom",
+          "solution_details": {
+            "type": "Interface Development",
+            "objects": [
+              "ZCPG_EDI_856_OUTBOUND program",
+              "ZCPG_PACKING_DETAIL table",
+              "User exit after goods issue"
+            ],
+            "effort_days": 20,
+            "complexity": "Medium"
+          }
+        },
+        {
+          "req_id": "O2C-004-04",
+          "description": "Proof of delivery (POD)",
+          "priority": "Medium",
+          "fit_gap": "Fit",
+          "sap_standard": "Standard POD functionality",
+          "solution_approach": "Standard",
+          "configuration": [
+            "POD configuration",
+            "Output determination"
+          ]
+        }
+      ]
+    },
+    
+    "billing": {
+      "process_id": "O2C-005",
+      "description": "Billing and Invoicing",
+      "requirements": [
+        {
+          "req_id": "O2C-005-01",
+          "description": "Automatic billing after goods issue",
+          "priority": "High",
+          "fit_gap": "Fit",
+          "sap_standard": "Standard billing (VF01/VF04)",
+          "solution_approach": "Standard",
+          "configuration": [
+            "Billing type configuration",
+            "Copy control settings",
+            "Background job for VF04"
+          ]
+        },
+        {
+          "req_id": "O2C-005-02",
+          "description": "Invoice EDI transmission (EDI 810)",
+          "priority": "Critical",
+          "fit_gap": "Gap",
+          "sap_standard": "Standard EDI framework",
+          "gap_description": "Need custom mapping for CPG invoice requirements",
+          "solution_approach": "Custom",
+          "solution_details": {
+            "type": "Interface Development",
+            "objects": [
+              "ZCPG_EDI_810_OUTBOUND program",
+              "EDI mapping configuration"
+            ],
+            "effort_days": 15,
+            "complexity": "Medium"
+          }
+        },
+        {
+          "req_id": "O2C-005-03",
+          "description": "Deduction management",
+          "priority": "High",
+          "fit_gap": "Gap",
+          "sap_standard": "Not available",
+          "gap_description": "Need deduction tracking and resolution workflow",
+          "solution_approach": "Custom",
+          "solution_details": {
+            "type": "Custom Development",
+            "objects": [
+              "ZCPG_DEDUCTION table",
+              "ZCL_CPG_SD_DEDUCTION_MGR class",
+              "ZCPG_SD_DEDUCTION_WF workflow",
+              "ZCPG_SD02 - Deduction Dashboard"
+            ],
+            "effort_days": 30,
+            "complexity": "High"
+          }
+        },
+        {
+          "req_id": "O2C-005-04",
+          "description": "Credit memo processing",
+          "priority": "High",
+          "fit_gap": "Fit",
+          "sap_standard": "Standard credit memo (VF01)",
+          "solution_approach": "Standard",
+          "configuration": [
+            "Credit memo type configuration",
+            "Copy control",
+            "Approval workflow (if needed)"
+          ]
+        }
+      ]
+    },
+    
+    "returns_management": {
+      "process_id": "O2C-006",
+      "description": "Returns and Credits",
+      "requirements": [
+        {
+          "req_id": "O2C-006-01",
+          "description": "Return authorization (RMA)",
+          "priority": "High",
+          "fit_gap": "Fit",
+          "sap_standard": "Return order processing",
+          "solution_approach": "Standard",
+          "configuration": [
+            "Return order type",
+            "Return delivery type",
+            "Return credit memo"
+          ]
+        },
+        {
+          "req_id": "O2C-006-02",
+          "description": "Return reason code tracking",
+          "priority": "Medium",
+          "fit_gap": "Fit",
+          "sap_standard": "Reason for rejection field",
+          "solution_approach": "Standard",
+          "configuration": [
+            "Configure reason codes",
+            "Reporting on return reasons"
+          ]
+        },
+        {
+          "req_id": "O2C-006-03",
+          "description": "Expired product returns with batch tracking",
+          "priority": "High",
+          "fit_gap": "Partial Fit",
+          "sap_standard": "Batch management in returns",
+          "gap_description": "Need automatic expiry validation and quality inspection",
+          "solution_approach": "Hybrid",
+          "solution_details": {
+            "type": "Configuration + Custom",
+            "standard_config": "Batch management, QM integration",
+            "custom_objects": [
+              "ZCPG_MM_CHECK_BATCH_EXPIRY function",
+              "User exit in return processing"
+            ],
+            "effort_days": 10,
+            "complexity": "Medium"
+          }
+        }
+      ]
+    }
+  },
+  
+  "summary": {
+    "total_requirements": 24,
+    "fit_count": 10,
+    "partial_fit_count": 2,
+    "gap_count": 12,
+    "fit_percentage": 41.7,
+    "total_effort_days": 245,
+    "critical_gaps": [
+      "Promotional order processing with trade allowances",
+      "EDI order intake (850)",
+      "Advanced shipping notice (856)",
+      "Invoice EDI (810)",
+      "Deduction management"
+    ]
+  },
+  
+  "implementation_phases": {
+    "phase_1_foundation": {
+      "duration_weeks": 12,
+      "requirements": [
+        "O2C-002-01 - Promotional pricing",
+        "O2C-003-02 - Promotional campaigns",
+        "O2C-003-03 - Trade spend accruals",
+        "O2C-001-01 - Customer hierarchy"
+      ],
+      "deliverables": [
+        "Promotional pricing engine",
+        "Trade spend management",
+        "Customer hierarchy"
+      ]
+    },
+    "phase_2_integration": {
+      "duration_weeks": 10,
+      "requirements": [
+        "O2C-002-02 - EDI 850 inbound",
+        "O2C-002-04 - EDI 855 confirmation",
+        "O2C-004-03 - EDI 856 ASN",
+        "O2C-005-02 - EDI 810 invoice"
+      ],
+      "deliverables": [
+        "EDI integration framework",
+        "All EDI transactions"
+      ]
+    },
+    "phase_3_enhancements": {
+      "duration_weeks": 8,
+      "requirements": [
+        "O2C-005-03 - Deduction management",
+        "O2C-004-02 - Delivery windows",
+        "O2C-006-03 - Expired product returns"
+      ],
+      "deliverables": [
+        "Deduction management system",
+        "Enhanced delivery processing",
+        "Returns enhancements"
+      ]
+    }
+  },
+  
+  "risks_and_mitigation": [
+    {
+      "risk": "Complex promotional pricing may impact performance",
+      "severity": "High",
+      "mitigation": "Implement caching, optimize database access, performance testing"
+    },
+    {
+      "risk": "EDI integration dependencies on trading partners",
+      "severity": "Medium",
+      "mitigation": "Early engagement with partners, phased rollout, fallback procedures"
+    },
+    {
+      "risk": "Trade spend accrual accuracy",
+      "severity": "High",
+      "mitigation": "Detailed business rules documentation, extensive testing, finance sign-off"
+    }
+  ]
+}

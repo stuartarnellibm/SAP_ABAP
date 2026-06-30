@@ -1,0 +1,509 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SAP R/3 Quality Assurance System Configuration",
+  "description": "Quality Assurance system configuration for CPG Order-to-Cash and Warehouse Management",
+  "last_updated": "2026-06-17",
+  
+  "system_details": {
+    "system_id": "CPQ",
+    "system_name": "CPG Quality Assurance",
+    "system_type": "Quality Assurance",
+    "sap_release": "ECC 6.0 EHP8",
+    "database": "Oracle 19c",
+    "operating_system": "Linux x86_64",
+    "landscape_role": "Testing and Quality Assurance",
+    "client": "200",
+    "description": "Quality assurance and user acceptance testing system"
+  },
+  
+  "transport_configuration": {
+    "transport_domain": "CPGDOM",
+    "transport_group": "CPG",
+    "transport_layer": "ZCPG",
+    "transport_source": {
+      "primary": "CPD",
+      "description": "Development System"
+    },
+    "transport_target": {
+      "primary": "UAT1",
+      "final": "CPP",
+      "description": "4-tier landscape: QA → UAT → PROD"
+    },
+    "transport_routes": [
+      {
+        "source": "CPD",
+        "target": "CPQ",
+        "transport_layer": "ZCPG",
+        "consolidation_route": false,
+        "delivery_route": true,
+        "description": "Automatic import from DEV"
+      },
+      {
+        "source": "CPQ",
+        "target": "UAT1",
+        "transport_layer": "ZCPG",
+        "consolidation_route": false,
+        "delivery_route": true,
+        "description": "Forward to UAT after QA approval"
+      }
+    ],
+    "import_strategy": {
+      "method": "Scheduled automatic import",
+      "schedule": "Daily at 02:00 AM",
+      "approval_required": false,
+      "notification": "transport.coord@company.com"
+    }
+  },
+  
+  "testing_configuration": {
+    "test_clients": [
+      {
+        "client": "200",
+        "description": "Integration Testing",
+        "purpose": "Technical integration testing",
+        "data_source": "Copy of production (anonymized)",
+        "refresh_frequency": "Monthly"
+      },
+      {
+        "client": "210",
+        "description": "User Acceptance Testing",
+        "purpose": "Business user testing",
+        "data_source": "Copy of production (anonymized)",
+        "refresh_frequency": "Monthly"
+      },
+      {
+        "client": "220",
+        "description": "Training",
+        "purpose": "End user training",
+        "data_source": "Training data set",
+        "refresh_frequency": "Quarterly"
+      }
+    ],
+    "test_data_management": {
+      "anonymization": {
+        "enabled": true,
+        "fields_anonymized": [
+          "Customer names and addresses",
+          "Contact information",
+          "Financial data",
+          "Employee information"
+        ],
+        "tool": "SAP Data Services"
+      },
+      "test_data_creation": {
+        "method": "eCATT scripts",
+        "scenarios": [
+          "Standard order processing",
+          "Promotional orders",
+          "Returns and credits",
+          "Warehouse operations",
+          "Batch management"
+        ]
+      }
+    }
+  },
+  
+  "testing_process": {
+    "integration_testing": {
+      "client": "200",
+      "responsible": "Development Team",
+      "duration": "3-5 days",
+      "activities": [
+        {
+          "step": 1,
+          "activity": "Import validation",
+          "description": "Verify transport imported successfully",
+          "responsible": "Basis Team"
+        },
+        {
+          "step": 2,
+          "activity": "Smoke testing",
+          "description": "Basic functionality verification",
+          "responsible": "Developer"
+        },
+        {
+          "step": 3,
+          "activity": "Integration testing",
+          "description": "End-to-end process testing",
+          "responsible": "Development Team"
+        },
+        {
+          "step": 4,
+          "activity": "Regression testing",
+          "description": "Verify no impact on existing functionality",
+          "responsible": "QA Team"
+        },
+        {
+          "step": 5,
+          "activity": "Performance testing",
+          "description": "Verify performance standards met",
+          "responsible": "Technical Team"
+        }
+      ],
+      "exit_criteria": [
+        "All test cases passed",
+        "No critical or high severity defects",
+        "Performance standards met",
+        "Code review completed",
+        "Documentation updated"
+      ]
+    },
+    "user_acceptance_testing": {
+      "client": "210",
+      "responsible": "Business Users",
+      "duration": "5-10 days",
+      "activities": [
+        {
+          "step": 1,
+          "activity": "UAT preparation",
+          "description": "Prepare test scenarios and data",
+          "responsible": "Business Analyst"
+        },
+        {
+          "step": 2,
+          "activity": "User training",
+          "description": "Train users on new functionality",
+          "responsible": "Training Team"
+        },
+        {
+          "step": 3,
+          "activity": "UAT execution",
+          "description": "Business users execute test scenarios",
+          "responsible": "Business Users"
+        },
+        {
+          "step": 4,
+          "activity": "Defect resolution",
+          "description": "Fix and retest defects",
+          "responsible": "Development Team"
+        },
+        {
+          "step": 5,
+          "activity": "UAT sign-off",
+          "description": "Business approval for production",
+          "responsible": "Business Owner"
+        }
+      ],
+      "exit_criteria": [
+        "All business scenarios validated",
+        "User acceptance obtained",
+        "Training materials updated",
+        "No open critical defects",
+        "Production readiness confirmed"
+      ]
+    }
+  },
+  
+  "quality_gates": {
+    "gate_1_technical": {
+      "name": "Technical Quality Gate",
+      "criteria": [
+        "All unit tests passed (80% coverage minimum)",
+        "Code inspector clean (no errors)",
+        "Integration tests passed",
+        "Performance benchmarks met",
+        "Security scan completed"
+      ],
+      "approver": "Technical Lead",
+      "mandatory": true
+    },
+    "gate_2_functional": {
+      "name": "Functional Quality Gate",
+      "criteria": [
+        "All test cases executed",
+        "No critical defects",
+        "Regression testing passed",
+        "Documentation complete",
+        "Training materials ready"
+      ],
+      "approver": "QA Manager",
+      "mandatory": true
+    },
+    "gate_3_business": {
+      "name": "Business Quality Gate",
+      "criteria": [
+        "UAT completed successfully",
+        "Business sign-off obtained",
+        "Change management approved",
+        "Production support ready",
+        "Rollback plan documented"
+      ],
+      "approver": "Business Owner",
+      "mandatory": true
+    }
+  },
+  
+  "defect_management": {
+    "defect_tracking_tool": "ServiceNow",
+    "severity_levels": [
+      {
+        "level": "Critical",
+        "description": "System down or major functionality broken",
+        "response_time": "Immediate",
+        "resolution_time": "4 hours",
+        "escalation": "IT Director"
+      },
+      {
+        "level": "High",
+        "description": "Significant functionality impaired",
+        "response_time": "2 hours",
+        "resolution_time": "1 business day",
+        "escalation": "Development Manager"
+      },
+      {
+        "level": "Medium",
+        "description": "Minor functionality issue with workaround",
+        "response_time": "1 business day",
+        "resolution_time": "5 business days",
+        "escalation": "Technical Lead"
+      },
+      {
+        "level": "Low",
+        "description": "Cosmetic or enhancement request",
+        "response_time": "3 business days",
+        "resolution_time": "Next release",
+        "escalation": "None"
+      }
+    ],
+    "defect_workflow": [
+      "New → Assigned → In Progress → Fixed → Testing → Closed"
+    ]
+  },
+  
+  "performance_testing": {
+    "tools": [
+      {
+        "tool": "SAP Solution Manager",
+        "usage": "End-to-end performance monitoring"
+      },
+      {
+        "tool": "LoadRunner",
+        "usage": "Load and stress testing"
+      }
+    ],
+    "performance_benchmarks": {
+      "order_creation": {
+        "target": "< 3 seconds",
+        "measurement": "Average response time for VA01"
+      },
+      "delivery_creation": {
+        "target": "< 5 seconds",
+        "measurement": "Average response time for VL01N"
+      },
+      "goods_issue": {
+        "target": "< 2 seconds",
+        "measurement": "Average response time for VL02N goods issue"
+      },
+      "transfer_order_creation": {
+        "target": "< 4 seconds",
+        "measurement": "Average response time for LT03"
+      },
+      "batch_jobs": {
+        "target": "Complete within scheduled window",
+        "measurement": "Job completion time"
+      }
+    },
+    "load_testing_scenarios": [
+      {
+        "scenario": "Peak order entry",
+        "concurrent_users": 50,
+        "duration": "2 hours",
+        "transactions": ["VA01", "VA02"]
+      },
+      {
+        "scenario": "Warehouse operations",
+        "concurrent_users": 30,
+        "duration": "4 hours",
+        "transactions": ["LT01", "LT03", "LT12"]
+      },
+      {
+        "scenario": "End-of-day processing",
+        "concurrent_users": 100,
+        "duration": "1 hour",
+        "transactions": ["VL01N", "VL02N", "VF01"]
+      }
+    ]
+  },
+  
+  "authorization_management": {
+    "test_users": [
+      {
+        "user_type": "Developer",
+        "count": 10,
+        "roles": ["Z_CPG_DEVELOPER", "SAP_ALL"],
+        "purpose": "Integration testing"
+      },
+      {
+        "user_type": "Business User",
+        "count": 50,
+        "roles": ["Z_CPG_SD_USER", "Z_CPG_MM_USER", "Z_CPG_WM_USER"],
+        "purpose": "UAT and training"
+      },
+      {
+        "user_type": "Power User",
+        "count": 10,
+        "roles": ["Z_CPG_SD_POWER", "Z_CPG_MM_POWER", "Z_CPG_WM_POWER"],
+        "purpose": "Advanced testing"
+      }
+    ],
+    "role_maintenance": {
+      "sync_from_production": true,
+      "sync_frequency": "Weekly",
+      "custom_roles_package": "ZCPG_AUTH"
+    }
+  },
+  
+  "monitoring_and_alerts": {
+    "system_monitoring": {
+      "tool": "SAP Solution Manager",
+      "metrics": [
+        "System availability",
+        "Response times",
+        "Database performance",
+        "Background job status",
+        "Transport import status"
+      ],
+      "alert_recipients": [
+        "basis.support@company.com",
+        "transport.coord@company.com"
+      ]
+    },
+    "application_monitoring": {
+      "custom_monitors": [
+        {
+          "name": "Order Processing Monitor",
+          "frequency": "Every 15 minutes",
+          "checks": [
+            "Order creation success rate",
+            "Delivery creation success rate",
+            "Pricing errors"
+          ]
+        },
+        {
+          "name": "Warehouse Operations Monitor",
+          "frequency": "Every 30 minutes",
+          "checks": [
+            "Transfer order creation rate",
+            "Confirmation delays",
+            "Stock discrepancies"
+          ]
+        }
+      ]
+    }
+  },
+  
+  "data_refresh_process": {
+    "frequency": "Monthly",
+    "schedule": "First weekend of each month",
+    "process": [
+      {
+        "step": 1,
+        "activity": "Production backup",
+        "responsible": "Basis Team",
+        "duration": "4 hours"
+      },
+      {
+        "step": 2,
+        "activity": "Restore to QAS",
+        "responsible": "Basis Team",
+        "duration": "6 hours"
+      },
+      {
+        "step": 3,
+        "activity": "Data anonymization",
+        "responsible": "Data Team",
+        "duration": "8 hours"
+      },
+      {
+        "step": 4,
+        "activity": "Client copy to test clients",
+        "responsible": "Basis Team",
+        "duration": "4 hours per client"
+      },
+      {
+        "step": 5,
+        "activity": "Post-refresh activities",
+        "responsible": "Development Team",
+        "duration": "2 hours",
+        "activities": [
+          "Update RFC destinations",
+          "Reset batch job schedules",
+          "Verify custom configurations"
+        ]
+      }
+    ],
+    "downtime_window": "Saturday 00:00 - Sunday 12:00"
+  },
+  
+  "release_management": {
+    "release_schedule": "Bi-weekly",
+    "release_window": "Saturday 20:00 - Sunday 06:00",
+    "release_process": [
+      {
+        "step": 1,
+        "activity": "Release preparation",
+        "timing": "T-5 days",
+        "responsible": "Release Manager",
+        "deliverables": [
+          "Release notes",
+          "Transport list",
+          "Rollback plan",
+          "Communication plan"
+        ]
+      },
+      {
+        "step": 2,
+        "activity": "Final QAS validation",
+        "timing": "T-3 days",
+        "responsible": "QA Team",
+        "deliverables": [
+          "Test results",
+          "Sign-off document"
+        ]
+      },
+      {
+        "step": 3,
+        "activity": "CAB approval",
+        "timing": "T-2 days",
+        "responsible": "Change Manager",
+        "deliverables": [
+          "CAB approval",
+          "Risk assessment"
+        ]
+      },
+      {
+        "step": 4,
+        "activity": "Production import",
+        "timing": "Release window",
+        "responsible": "Basis Team",
+        "deliverables": [
+          "Import log",
+          "Validation results"
+        ]
+      },
+      {
+        "step": 5,
+        "activity": "Post-release validation",
+        "timing": "T+1 day",
+        "responsible": "Support Team",
+        "deliverables": [
+          "Smoke test results",
+          "Incident report"
+        ]
+      }
+    ]
+  },
+  
+  "contacts": {
+    "qa_team": {
+      "qa_manager": "qa.manager@company.com",
+      "test_lead": "test.lead@company.com",
+      "automation_lead": "automation.lead@company.com"
+    },
+    "support": {
+      "basis_team": "basis.support@company.com",
+      "transport_coordinator": "transport.coord@company.com",
+      "release_manager": "release.mgr@company.com"
+    }
+  }
+}
