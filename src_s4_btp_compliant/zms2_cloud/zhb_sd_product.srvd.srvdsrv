@@ -1,4 +1,0 @@
-@EndUserText.label: 'Product Service Definition'
-define service ZHB_SD_PRODUCT {
-  expose ZHB_C_PRODUCT as Product;
-}
